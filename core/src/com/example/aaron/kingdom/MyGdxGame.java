@@ -159,9 +159,8 @@ public class MyGdxGame extends ApplicationAdapter implements InputProcessor, Ges
 	}
 
 	private void keepCameraInBounds () {
-		OrthographicCamera c = this.camera;
-		Vector3 camPos = c.position;
-		float HW = c.viewportWidth / 2, HH = c.viewportHeight / 2;
+		Vector3 camPos = camera.position;
+		float HW = camera.viewportWidth / 2, HH = camera.viewportHeight / 2;
 		camPos.x = MathUtils.clamp(camPos.x, spriteMap.getWidth()/2 - spriteMap.getWidth() + HW, spriteMap.getWidth() - spriteMap.getWidth()/2 - HW);
 		camPos.y = MathUtils.clamp(camPos.y, spriteMap.getHeight()/2 - spriteMap.getWidth() + HH, spriteMap.getHeight() - spriteMap.getHeight()/2 - HH);
 		message = Float.toString(camPos.x) + " " + Float.toString(camPos.y);
