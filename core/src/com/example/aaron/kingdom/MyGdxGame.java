@@ -14,18 +14,20 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.input.GestureDetector;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 
 
 public class MyGdxGame extends ApplicationAdapter implements InputProcessor, GestureDetector.GestureListener {
 
 	private SpriteBatch batch;
-	private BitmapFont fontTitle, font;
-	private Texture img;
-	private Sprite sprite, spriteMap;
+	private BitmapFont fontTitle, fontMessage;
+	private Texture imgMap;
+	private Sprite spriteMap;
 	private int screenWidth, screenHeight;
 	private String message = "Touch Me";
-	private GlyphLayout layout;
-	private float width, height;
+	private String title = "Kingdom Alliance";
+	private GlyphLayout layoutMessage, layoutTitle;
+	private float widthTitle, heightTitle, widthMessage, heightMessage;
 	private OrthographicCamera camera;
 
 	@Override
@@ -33,35 +35,35 @@ public class MyGdxGame extends ApplicationAdapter implements InputProcessor, Ges
 
 		batch = new SpriteBatch();
 
-		fontTitle = new BitmapFont();
-		fontTitle.setColor(Color.RED);
-		fontTitle.getData().scale(5);  //fast but blurry
+		imgMap = new Texture("map.png");
+		spriteMap = new Sprite(imgMap);
+		spriteMap.setPosition(-spriteMap.getWidth()/2, -spriteMap.getHeight()/2); //image center is center on screen when started
 
-		img = new Texture("map.png");
-		sprite = new Sprite(img);
-		sprite.setPosition(-sprite.getWidth()/2, -sprite.getHeight()/2); //center on screen
-
-		screenWidth = Gdx.graphics.getWidth();
+		screenWidth = Gdx.graphics.getWidth();  //phones screen size in px
 		screenHeight = Gdx.graphics.getHeight();
 
-		font = new BitmapFont();
-		font.setColor(Color.BLUE);
-		font.getData().scale(5);
+		fontMessage = new BitmapFont(); // need to learn proper way to increase text size
+		fontMessage.setColor(Color.BLUE);
+		fontMessage.getData().scale(5);
+		fontTitle = new BitmapFont();
+		fontTitle.setColor(Color.GOLD);
+		fontTitle.getData().scale(8);
 
 		Gdx.input.setInputProcessor(this);
 		Gdx.input.setInputProcessor(new GestureDetector(this));
 
-		layout = new GlyphLayout();
+		layoutMessage = new GlyphLayout();
+		layoutTitle = new GlyphLayout();
 
-		camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		camera = new OrthographicCamera(screenWidth, screenHeight ); //area of pixel that camera will show
 	}
 
 	@Override
 	public void dispose() {
 		batch.dispose();
 		fontTitle.dispose();
-		font.dispose();
-		img.dispose();
+		fontMessage.dispose();
+		imgMap.dispose();
 	}
 
 	@Override
@@ -69,19 +71,20 @@ public class MyGdxGame extends ApplicationAdapter implements InputProcessor, Ges
 		Gdx.gl.glClearColor(1, 1, 1, 1); //Color White
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT); //White background
 
-		layout.setText(font, message);
-		width = screenWidth/2 - layout.width/2;
-		height = screenHeight/2 + layout.height/2;
+		layoutMessage.setText(fontMessage, message);
+		layoutTitle.setText(fontTitle, title);
 
+		widthTitle = -layoutTitle.width/2;
+		heightTitle = layoutTitle.height/2 + layoutTitle.height;
+		widthMessage = -layoutMessage.width/2;
+		heightMessage = layoutMessage.height/2 - layoutMessage.height;
 		batch.setProjectionMatrix(camera.combined);
 
 		batch.begin();
-		sprite.draw(batch);
-		font.draw(batch, message, width, height);
-		fontTitle.draw(batch, "Kingdom Alliance", 100, 400); //(0,0) bottom left corner
+		spriteMap.draw(batch);
+		fontMessage.draw(batch, message, widthMessage, heightMessage);
+		fontTitle.draw(batch, title, widthTitle, heightTitle); //(0,0) center of image
 		batch.end();
-
-
 	}
 
 	@Override
@@ -149,19 +152,19 @@ public class MyGdxGame extends ApplicationAdapter implements InputProcessor, Ges
 
 	@Override
 	public boolean pan(float x, float y, float deltaX, float deltaY) {
-		if (camera.position.x - deltaX < -6350 || camera.position.x - deltaX > 6350 || camera.position.y + deltaY < -2800 || camera.position.y + deltaY > 2800){
-			return true;
-		}
-		//else if (camera.position.y - deltaY < -280 || camera.position.y - deltaY > 280){
-		//	return true;
-		//}
-		else {
-			camera.translate(-deltaX, deltaY, 0);
-			message = camera.position.x - deltaX + ", " + camera.position.y + deltaY;
-			camera.update();
-			return true;
-		}
+		camera.translate(-deltaX, deltaY);
+		keepCameraInBounds();
+		camera.update();
+		return true;
+	}
 
+	private void keepCameraInBounds () {
+		OrthographicCamera c = this.camera;
+		Vector3 camPos = c.position;
+		float HW = c.viewportWidth / 2, HH = c.viewportHeight / 2;
+		camPos.x = MathUtils.clamp(camPos.x, spriteMap.getWidth()/2 - spriteMap.getWidth() + HW, spriteMap.getWidth() - spriteMap.getWidth()/2 - HW);
+		camPos.y = MathUtils.clamp(camPos.y, spriteMap.getHeight()/2 - spriteMap.getWidth() + HH, spriteMap.getHeight() - spriteMap.getHeight()/2 - HH);
+		message = Float.toString(camPos.x) + " " + Float.toString(camPos.y);
 	}
 
 	@Override
